@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card } from './Common.jsx'
 import { Icons } from './Icons.jsx'
 
@@ -7,8 +7,27 @@ export default function BlogPage() {
   const [desc, setDesc] = useState('')
   const [imagePreview, setImagePreview] = useState(null)
   const [successMsg, setSuccessMsg] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [blogs, setBlogs] = useState([])
 
-  const handleSubmit = (e) => {
+  const fetchBlogs = async () => {
+    try {
+      const res = await fetch('/api/blogs')
+      if (!res.ok) throw new Error('Failed to fetch blogs')
+      const data = await res.json()
+      if (data.success) {
+        setBlogs(data.data)
+      }
+    } catch (err) {
+      console.error('Error fetching blogs:', err)
+    }
+  }
+
+  useEffect(() => {
+    fetchBlogs()
+  }, [])
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!title.trim()) {
       alert('Please enter a blog title')
@@ -23,23 +42,40 @@ export default function BlogPage() {
       return
     }
 
-    // Process submission (simulated frontend action)
-    setSuccessMsg('✓ Blog post successfully published!')
+    setLoading(true)
+    try {
+      const res = await fetch('/api/blogs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description: desc,
+          coverImage: imagePreview,
+        }),
+      })
 
-    // Log submission data
-    console.log('Submitted Blog Post:', {
-      title,
-      desc,
-      url: imagePreview.slice(0, 100) + '...' // truncate base64 log
-    })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to publish blog post')
+      }
 
-    // Reset form after a brief delay
-    setTimeout(() => {
-      setTitle('')
-      setDesc('')
-      setImagePreview(null)
-      setSuccessMsg('')
-    }, 2000)
+      setSuccessMsg('✓ Blog post successfully published!')
+      fetchBlogs()
+
+      // Reset form after a brief delay
+      setTimeout(() => {
+        setTitle('')
+        setDesc('')
+        setImagePreview(null)
+        setSuccessMsg('')
+        setLoading(false)
+      }, 1500)
+    } catch (err) {
+      alert(err.message)
+      setLoading(false)
+    }
   }
 
   const handleFileChange = (e) => {
@@ -58,7 +94,7 @@ export default function BlogPage() {
   }
 
   return (
-    <div className="w-full py-4 animate-fadeIn">
+    <div className="w-full py-4 space-y-6 animate-fadeIn">
       <Card className="p-6 md:p-8 space-y-6">
         <div className="border-b border-neutral-100 pb-4">
           <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-900">Create Blog Post</h2>
@@ -72,7 +108,7 @@ export default function BlogPage() {
             </svg>
             <span>{successMsg}</span>
           </div>
-        )}
+        )}  
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Blog Title */}
@@ -144,12 +180,68 @@ export default function BlogPage() {
           <div className="pt-2 border-t border-neutral-100 flex justify-end">
             <button
               type="submit"
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-xs font-bold uppercase tracking-wider cursor-pointer transition shadow-sm"
+              disabled={loading}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg text-xs font-bold uppercase tracking-wider cursor-pointer transition shadow-sm disabled:opacity-50"
             >
-              {Icons.blog} Publish Blog Post
+              {loading ? (
+                <div className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                Icons.blog
+              )}
+              {loading ? 'Publishing...' : 'Publish Blog Post'}
             </button>
           </div>
         </form>
+      </Card>
+
+      {/* Published Blogs Section */}
+      <Card className="p-6 md:p-8 space-y-6">
+        <div className="border-b border-neutral-100 pb-4">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-900">Published Articles ({blogs.length})</h2>
+          <p className="text-xs text-neutral-400 mt-1">Manage and read published articles and news items.</p>
+        </div>
+
+        {blogs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center text-neutral-400 space-y-2">
+            <div className="text-2xl">📝</div>
+            <p className="text-xs font-semibold">No published articles yet</p>
+            <p className="text-[10px]">Create your first post using the editor above.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {blogs.map((b) => (
+              <div key={b._id} className="group border border-neutral-200 rounded-xl overflow-hidden bg-white hover:border-neutral-400 hover:shadow-sm transition-all duration-300 flex flex-col h-full">
+                <div className="aspect-[16/9] w-full overflow-hidden bg-neutral-100 relative">
+                  <img 
+                    src={b.coverImage} 
+                    alt={b.title}
+                    className="object-cover w-full h-full group-hover:scale-102 transition-transform duration-500" 
+                    onError={(e) => {
+                      e.target.src = 'https://placehold.co/600x400?text=Load+Error'
+                    }}
+                  />
+                </div>
+                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                  <div className="space-y-1.5">
+                    <h3 className="text-xs font-bold text-neutral-900 line-clamp-2" title={b.title}>
+                      {b.title}
+                    </h3>
+                    <p className="text-neutral-500 text-[11px] leading-relaxed line-clamp-3">
+                      {b.description}
+                    </p>
+                  </div>
+                  <div className="text-[9px] text-neutral-400 pt-2 border-t border-neutral-50">
+                    {b.createdAt ? new Date(b.createdAt).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }) : 'N/A'}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   )

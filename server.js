@@ -33,6 +33,9 @@ app.use("/api/gallery", galleryRoutes);
 
 app.use("/api/blogs", require("./routes/blogRoutes"));
 
+app.use("/api/contacts", require("./routes/contactRoutes"));
+
+
 
 const PORT = process.env.PORT || 5000;
 
