@@ -50,6 +50,20 @@ export default function Dashboard({ user, onLogout }) {
         <div className="min-w-0">
           <p className="text-xs font-semibold text-neutral-900 truncate">{user?.name || 'Admin'}</p>
           <p className="text-[10px] text-neutral-500 truncate">{user?.email}</p>
+          {(user?.role || user?.category) && (
+            <div className="flex flex-col gap-0.5 mt-1">
+              {user?.role && (
+                <span className="text-[8px] px-1 py-0.5 bg-neutral-200 border border-neutral-300 text-neutral-700 rounded font-semibold uppercase w-max">
+                  {user.role}
+                </span>
+              )}
+              {user?.category && (
+                <span className="text-[8px] px-1 py-0.5 bg-neutral-100 border border-neutral-200 text-neutral-500 rounded font-medium w-max truncate max-w-[120px]">
+                  {user.category}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <button

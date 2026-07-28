@@ -33,7 +33,7 @@ const sendEmail = async (options) => {
 
   const mailOptions = {
     from: `"Inbound Query Portal" <${emailUser}>`,
-    to: "muralidharan18898@gmail.com",
+    to: options.to || process.env.EMAIL_TO || "syscorpfrontend@gmail.com",
     subject: options.subject,
     text: options.text,
     html: options.html,

@@ -6,10 +6,10 @@ exports.createContact = async (req, res) => {
   try {
     const contact = await Contact.create(req.body);
 
-    // Send email notification to muralidharan18898@gmail.com
+    // Send email notification
     try {
       await sendEmail({
-        to: "muralidharan18898@gmail.com",
+        to: process.env.EMAIL_TO || "syscorpfrontend@gmail.com",
         subject: `New Support Query: ${contact.subject}`,
         text: `You have received a new support inquiry.\n\nSender: ${contact.name}\nEmail: ${contact.email}\nSubject: ${contact.subject}\nMessage: ${contact.message}\n\nReview this in the Admin Dashboard.`,
         html: `
